@@ -1,0 +1,22 @@
+{
+  "company": {
+    "name": "NextGen Business Consultancy",
+    "tagline": "Digital Marketing & Business Growth Solutions",
+    "logo": "/logo.png",
+    "address": "2ND FLOOR, PRESIDENT PLAZA, SG HIGHWAY, THALTEJ, AHMEDABAD - 380054",
+    "phone": "+91 79041 51624",
+    "email": "info@nextgenbusiness.co.in",
+    "website": "www.nextgenbusiness.co.in",
+    "gstin": "",
+    "brandPrimaryColor": "#0B2050",
+    "brandAccentColor": "#D4A24C",
+    "quoteNumberPrefix": "NGBC",
+    "defaultValidityDays": 15,
+    "bankName": "IDFC FIRST Bank",
+    "accountName": "NEXT-GEN BUSINESS CONSULTANCY PRIVATE LIMITED",
+    "accountNo": "10235598826",
+    "ifsc": "IDFB0040343",
+    "swift": "IDFBINBBMUM",
+    "branch": "Ahmedabad – Shela Branch"
+  }
+}
