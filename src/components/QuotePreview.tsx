@@ -1,6 +1,6 @@
 "use client";
 
-import { FullQuote } from "@/lib/types";
+import { FullQuote, Stat } from "@/lib/types";
 import { computeTotals, formatCurrency } from "@/lib/calc";
 import { useLogoAvailable } from "@/lib/useLogoAvailable";
 import {
@@ -11,6 +11,7 @@ import {
   Hourglass,
   Mail,
   MapPin,
+  Award,
   Megaphone,
   MonitorSmartphone,
   Package,
@@ -19,7 +20,9 @@ import {
   Search,
   Share2,
   ShoppingCart,
+  Star,
   User,
+  Users,
   type LucideIcon,
 } from "lucide-react";
 
@@ -86,6 +89,22 @@ export function QuotePreview({
   const navy = company.brandPrimaryColor || NAVY;
   const accent = company.brandAccentColor || ACCENT;
   const iconBg = withAlpha(accent, 0.1);
+
+  const informationRows: DetailRow[] = [
+    { label: "Company Name", value: company.legalName || company.name },
+    { label: "Address", value: company.address },
+    { label: "Email", value: company.email },
+    { label: "Website", value: company.website },
+  ];
+  const credentialRows: DetailRow[] = [
+    { label: "GSTIN", value: company.gstin },
+    { label: "Bank Name", value: company.bankName },
+    { label: "Account Name", value: company.accountName },
+    { label: "Account No.", value: company.accountNo },
+    { label: "IFSC Code", value: company.ifsc },
+    { label: "SWIFT Code", value: company.swift },
+    { label: "Branch", value: company.branch },
+  ];
 
   return (
     <div
@@ -259,11 +278,10 @@ export function QuotePreview({
         {/* ================= ITEMS ================= */}
         <table className="mt-5 w-full table-fixed border-collapse text-[13px]">
           <colgroup>
-            <col className="w-[45%]" />
-            <col className="w-[12%]" />
+            <col className="w-[40%]" />
             <col className="w-[15%]" />
-            <col className="w-[13%]" />
-            <col className="w-[15%]" />
+            <col className="w-[20%]" />
+            <col className="w-[25%]" />
           </colgroup>
           <thead>
             <tr style={{ backgroundColor: navy }}>
@@ -271,16 +289,13 @@ export function QuotePreview({
                 Service
               </th>
               <th className="px-2 py-3 text-center text-[11px] font-semibold uppercase tracking-[0.13em] text-white">
-                Qty
-              </th>
-              <th className="px-2 py-3 text-center text-[11px] font-semibold uppercase tracking-[0.13em] text-white">
                 Price
-              </th>
-              <th className="px-2 py-3 text-center text-[11px] font-semibold uppercase tracking-[0.13em] text-white">
-                Disc.
               </th>
               <th className="px-3 py-3 text-center text-[11px] font-semibold uppercase tracking-[0.13em] text-white">
                 Total
+              </th>
+              <th className="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.13em] text-white">
+                Remarks
               </th>
             </tr>
           </thead>
@@ -311,19 +326,16 @@ export function QuotePreview({
                     </div>
                   </td>
                   <td className="border-l border-slate-200 px-2 py-4 text-center align-middle font-semibold text-slate-800">
-                    {item.quantity}
-                  </td>
-                  <td className="border-l border-slate-200 px-2 py-4 text-center align-middle font-semibold text-slate-800">
                     {formatCurrency(item.unitPrice)}
-                  </td>
-                  <td className="border-l border-slate-200 px-2 py-4 text-center align-middle text-slate-500">
-                    {item.discountPct > 0 ? `${item.discountPct}%` : "—"}
                   </td>
                   <td
                     className="border-l border-slate-200 px-3 py-4 text-center align-middle text-[15px] font-extrabold"
                     style={{ color: accent }}
                   >
                     {formatCurrency(line?.total ?? 0)}
+                  </td>
+                  <td className="border-l border-slate-200 px-3 py-4 align-middle text-[12.5px] leading-[1.55] text-slate-600 [overflow-wrap:anywhere]">
+                    {item.remarks}
                   </td>
                 </tr>
               );
@@ -351,21 +363,15 @@ export function QuotePreview({
 
           <div className="w-[55%] border-l border-slate-200">
             <TotalRow label="Subtotal" value={formatCurrency(totals.subtotal)} />
-            {totals.lineDiscountTotal > 0 && (
-              <TotalRow
-                label="Line Discounts"
-                value={`- ${formatCurrency(totals.lineDiscountTotal)}`}
-                negative
-              />
-            )}
-            {totals.quoteDiscountAmt > 0 && (
-              <TotalRow
-                label="Quote Discount"
-                value={`- ${formatCurrency(totals.quoteDiscountAmt)}`}
-                negative
-              />
-            )}
-            <TotalRow label="Tax (GST)" value={formatCurrency(totals.taxTotal)} />
+            <TotalRow
+              label="Total Discount"
+              value={
+                totals.totalDiscount > 0
+                  ? `- ${formatCurrency(totals.totalDiscount)}`
+                  : formatCurrency(0)
+              }
+              negative={totals.totalDiscount > 0}
+            />
 
             {/* grand total bar */}
             <div className="relative h-[56px]">
@@ -391,44 +397,65 @@ export function QuotePreview({
           </div>
         </section>
 
-        {/* ================= WHY CHOOSE US + BANK DETAILS ================= */}
-        <section className="mt-7 grid grid-cols-[1.35fr_1fr] gap-8 px-5">
-          <div>
-            <p
-              className="text-[12.5px] font-bold uppercase tracking-[0.08em]"
-              style={{ color: accent }}
-            >
-              {whyChooseUsHeading}
-            </p>
-            <span className="mt-1.5 block h-[2px] w-8" style={{ backgroundColor: accent }} />
-            <p className="mt-3 text-[15px] font-bold leading-snug text-slate-800">
-              {trustedPartnerLine}
-            </p>
-            <p className="mt-2 text-[13.5px] font-extrabold leading-snug" style={{ color: navy }}>
-              {growLine}
-            </p>
-            <p className="mt-2 text-[12.5px] italic leading-relaxed text-slate-500">
-              {expertiseLine}
-            </p>
+        {/* ================= WHY CHOOSE US ================= */}
+        <section
+          className="mx-5 mt-7 border-l-4 px-6 py-5"
+          style={{ backgroundColor: withAlpha(accent, 0.08), borderColor: accent }}
+        >
+          <p
+            className="text-[16px] font-extrabold uppercase tracking-[0.1em]"
+            style={{ color: accent }}
+          >
+            {whyChooseUsHeading}
+          </p>
+          <span className="mt-1.5 block h-[2px] w-10" style={{ backgroundColor: accent }} />
+          <p className="mt-3 text-[22px] font-extrabold leading-tight text-slate-900">
+            {trustedPartnerLine}
+          </p>
+          <p className="mt-2 text-[16.5px] font-extrabold leading-snug" style={{ color: navy }}>
+            {growLine}
+          </p>
+          <p className="mt-2 text-[14px] leading-relaxed text-slate-600">{expertiseLine}</p>
+        </section>
+
+        {/* ================= PAGE 2: INFORMATION | CREDENTIALS ================= */}
+        <div className="mx-5 mt-10 border-t border-dashed border-slate-300" />
+
+        <section className="mt-8 px-5">
+          <div className="mb-5 flex items-center gap-4">
+            <h2 className="text-[24px] font-extrabold uppercase tracking-[0.06em]" style={{ color: navy }}>
+              Company Details
+            </h2>
+            <span className="h-[2px] flex-1" style={{ backgroundColor: accent }} />
           </div>
 
-          <div className="border-l border-slate-200 pl-8">
-            <p
-              className="text-[12px] font-bold uppercase tracking-[0.08em]"
-              style={{ color: accent }}
-            >
-              Bank Details
-            </p>
-            <div className="mt-3 rounded-lg border border-slate-200 px-4 py-3">
-              <BankRow label="Bank Name" value={company.bankName} />
-              <BankRow label="Account Name" value={company.accountName} />
-              <BankRow label="Account No." value={company.accountNo} />
-              <BankRow label="IFSC" value={company.ifsc} />
-              <BankRow label="SWIFT Code" value={company.swift} />
-              <BankRow label="Branch" value={company.branch} last />
-            </div>
+          <div className="grid grid-cols-2 border border-slate-300">
+            <DetailsColumn title="Information" rows={informationRows} navy={navy} accent={accent} />
+            <DetailsColumn
+              title="Credentials"
+              rows={credentialRows}
+              navy={navy}
+              accent={accent}
+              divider
+            />
           </div>
         </section>
+
+        {company.stats && (
+          <section className="mt-8 px-5">
+            <div className="mb-3 flex items-center gap-3">
+              <h2 className="text-[12px] font-bold uppercase tracking-[0.16em] text-slate-500">
+                Our Track Record
+              </h2>
+              <span className="h-px flex-1 bg-slate-300" />
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <StatCard stat={company.stats.employees} icon={Users} navy={navy} accent={accent} />
+              <StatCard stat={company.stats.googleReviews} icon={Star} stars navy={navy} accent={accent} />
+              <StatCard stat={company.stats.award} icon={Award} navy={navy} accent={accent} />
+            </div>
+          </section>
+        )}
 
         {/* ================= FOOTER ================= */}
         <footer className="relative mt-7 overflow-hidden rounded-b-sm" style={{ backgroundColor: navy }}>
@@ -461,23 +488,104 @@ function CircleIcon({ color, children }: { color: string; children: React.ReactN
   );
 }
 
-function BankRow({
-  label,
-  value,
-  last,
+function StatCard({
+  stat,
+  icon: Icon,
+  stars,
+  navy,
+  accent,
 }: {
-  label: string;
-  value: string;
-  last?: boolean;
+  stat: Stat;
+  icon: LucideIcon;
+  stars?: boolean;
+  navy: string;
+  accent: string;
 }) {
-  return (
-    <div
-      className={`flex items-center justify-between gap-3 py-2 text-[12px] ${
-        last ? "" : "border-b border-dashed border-slate-200"
-      }`}
+  const cardClass =
+    "flex flex-col items-center border border-slate-200 border-t-2 px-3 py-4 text-center";
+  const cardStyle = { borderTopColor: accent, backgroundColor: withAlpha(accent, 0.05) };
+
+  const body = (
+    <>
+      <span
+        className="flex h-9 w-9 items-center justify-center rounded-full text-white"
+        style={{ backgroundColor: navy }}
+      >
+        <Icon size={16} strokeWidth={2} />
+      </span>
+      <p className="mt-2 text-[28px] font-extrabold leading-none" style={{ color: navy }}>
+        {stat.value}
+      </p>
+      <div className="mt-1.5 flex h-3 items-center gap-0.5">
+        {stars ? (
+          [0, 1, 2, 3, 4].map((i) => (
+            <Star key={i} size={11} fill={accent} strokeWidth={0} style={{ color: accent }} />
+          ))
+        ) : (
+          <span className="block h-[2px] w-6" style={{ backgroundColor: accent }} />
+        )}
+      </div>
+      <p className="mt-1.5 text-[10.5px] font-bold uppercase tracking-[0.12em]" style={{ color: accent }}>
+        {stat.label}
+      </p>
+      <p className="mt-0.5 text-[11px] leading-snug text-slate-500">{stat.caption}</p>
+    </>
+  );
+
+  return stat.href ? (
+    <a
+      href={stat.href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={`${cardClass} transition-shadow hover:shadow-md`}
+      style={cardStyle}
     >
-      <span className="text-slate-500">{label}</span>
-      <span className="font-semibold text-slate-800">{value}</span>
+      {body}
+    </a>
+  ) : (
+    <div className={cardClass} style={cardStyle}>
+      {body}
+    </div>
+  );
+}
+
+type DetailRow = { label: string; value?: string };
+
+function DetailsColumn({
+  title,
+  rows,
+  navy,
+  accent,
+  divider,
+}: {
+  title: string;
+  rows: DetailRow[];
+  navy: string;
+  accent: string;
+  divider?: boolean;
+}) {
+  const visible = rows.filter((r) => r.value && r.value.trim());
+  return (
+    <div className={divider ? "border-l border-slate-300" : ""}>
+      <div
+        className="px-5 py-2.5 text-[15px] font-bold uppercase tracking-[0.12em] text-white"
+        style={{ backgroundColor: navy }}
+      >
+        {title}
+      </div>
+      {visible.map((r, i) => (
+        <div
+          key={r.label}
+          className={`px-5 py-3 ${i === visible.length - 1 ? "" : "border-b border-slate-200"}`}
+        >
+          <p className="text-[11px] font-bold uppercase tracking-[0.1em]" style={{ color: accent }}>
+            {r.label}
+          </p>
+          <p className="mt-0.5 text-[15px] font-bold leading-snug text-slate-900 [overflow-wrap:anywhere]">
+            {r.value}
+          </p>
+        </div>
+      ))}
     </div>
   );
 }

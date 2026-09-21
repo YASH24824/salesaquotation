@@ -2,77 +2,53 @@ import { QuoteDiscount, QuoteItem } from "./types";
 
 export type ItemBreakdown = {
   lineId: string;
+  /** price before GST */
   base: number;
-  lineDiscountAmt: number;
-  afterLineDiscount: number;
-  quoteDiscountShare: number;
-  taxableAmt: number;
   taxAmt: number;
+  /** price + GST, rounded to whole rupees so the column adds up to the subtotal */
   total: number;
 };
 
 export type QuoteTotals = {
   items: ItemBreakdown[];
+  /** sum of the line totals (price + GST) */
   subtotal: number;
-  lineDiscountTotal: number;
-  quoteDiscountAmt: number;
-  taxTotal: number;
+  /** discount given on the subtotal */
+  totalDiscount: number;
   grandTotal: number;
 };
 
+/** Discounts are given on the subtotal only, never per line. Each line's
+ *  total is its price + GST. */
 export function computeTotals(
   items: QuoteItem[],
   quoteDiscount: QuoteDiscount
 ): QuoteTotals {
-  const raw = items.map((item) => {
-    const base = item.quantity * item.unitPrice;
-    const lineDiscountAmt = base * (item.discountPct / 100);
-    const afterLineDiscount = base - lineDiscountAmt;
-    return { item, base, lineDiscountAmt, afterLineDiscount };
-  });
-
-  const subtotal = raw.reduce((sum, r) => sum + r.base, 0);
-  const lineDiscountTotal = raw.reduce((sum, r) => sum + r.lineDiscountAmt, 0);
-  const afterLineDiscountTotal = subtotal - lineDiscountTotal;
-
-  const quoteDiscountAmt =
-    afterLineDiscountTotal <= 0
-      ? 0
-      : quoteDiscount.type === "percent"
-        ? afterLineDiscountTotal * (quoteDiscount.value / 100)
-        : Math.min(quoteDiscount.value, afterLineDiscountTotal);
-
-  let taxTotal = 0;
-  const breakdown: ItemBreakdown[] = raw.map((r) => {
-    const share =
-      afterLineDiscountTotal > 0
-        ? r.afterLineDiscount / afterLineDiscountTotal
-        : 0;
-    const quoteDiscountShare = quoteDiscountAmt * share;
-    const taxableAmt = r.afterLineDiscount - quoteDiscountShare;
-    const taxAmt = taxableAmt * (r.item.taxPct / 100);
-    taxTotal += taxAmt;
+  const breakdown: ItemBreakdown[] = items.map((item) => {
+    const base = item.unitPrice;
+    const taxAmt = base * (item.taxPct / 100);
     return {
-      lineId: r.item.lineId,
-      base: r.base,
-      lineDiscountAmt: r.lineDiscountAmt,
-      afterLineDiscount: r.afterLineDiscount,
-      quoteDiscountShare,
-      taxableAmt,
+      lineId: item.lineId,
+      base,
       taxAmt,
-      total: taxableAmt + taxAmt,
+      total: Math.round(base + taxAmt),
     };
   });
 
-  const grandTotal = afterLineDiscountTotal - quoteDiscountAmt + taxTotal;
+  const subtotal = breakdown.reduce((sum, b) => sum + b.total, 0);
+
+  const totalDiscount =
+    subtotal <= 0
+      ? 0
+      : quoteDiscount.type === "percent"
+        ? Math.round(subtotal * (quoteDiscount.value / 100))
+        : Math.min(Math.round(quoteDiscount.value), subtotal);
 
   return {
     items: breakdown,
     subtotal,
-    lineDiscountTotal,
-    quoteDiscountAmt,
-    taxTotal,
-    grandTotal,
+    totalDiscount,
+    grandTotal: subtotal - totalDiscount,
   };
 }
 

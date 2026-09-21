@@ -97,21 +97,15 @@ export function TotalsPanel({
 
       <div className="space-y-1.5 border-t border-slate-100 pt-3 text-sm">
         <Row label="Subtotal" value={formatCurrency(totals.subtotal)} />
-        {totals.lineDiscountTotal > 0 && (
-          <Row
-            label="Line discounts"
-            value={`- ${formatCurrency(totals.lineDiscountTotal)}`}
-            muted
-          />
-        )}
-        {totals.quoteDiscountAmt > 0 && (
-          <Row
-            label="Quote discount"
-            value={`- ${formatCurrency(totals.quoteDiscountAmt)}`}
-            muted
-          />
-        )}
-        <Row label="Tax (GST)" value={formatCurrency(totals.taxTotal)} />
+        <Row
+          label="Total discount"
+          value={
+            totals.totalDiscount > 0
+              ? `- ${formatCurrency(totals.totalDiscount)}`
+              : formatCurrency(0)
+          }
+          muted={totals.totalDiscount > 0}
+        />
         <div className="mt-2 flex items-center justify-between border-t border-slate-100 pt-2">
           <span className="text-base font-bold text-slate-900">
             Grand Total

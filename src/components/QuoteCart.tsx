@@ -1,6 +1,6 @@
 "use client";
 
-import { Minus, Plus, Trash2, ShoppingCart } from "lucide-react";
+import { Trash2, ShoppingCart } from "lucide-react";
 import { QuoteItem } from "@/lib/types";
 import { ItemBreakdown } from "@/lib/calc";
 import { formatCurrency } from "@/lib/calc";
@@ -60,33 +60,6 @@ export function QuoteCart({
               </div>
 
               <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-                <div className="flex items-center gap-1">
-                  <span className="mr-1 text-xs text-slate-400">Qty</span>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      onUpdate(item.lineId, {
-                        quantity: Math.max(1, item.quantity - 1),
-                      })
-                    }
-                    className="flex h-7 w-7 items-center justify-center rounded-md border border-slate-300 text-slate-600 hover:bg-slate-50"
-                  >
-                    <Minus size={13} />
-                  </button>
-                  <span className="w-6 text-center text-sm font-semibold">
-                    {item.quantity}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      onUpdate(item.lineId, { quantity: item.quantity + 1 })
-                    }
-                    className="flex h-7 w-7 items-center justify-center rounded-md border border-slate-300 text-slate-600 hover:bg-slate-50"
-                  >
-                    <Plus size={13} />
-                  </button>
-                </div>
-
                 <label className="flex items-center gap-1.5 text-xs text-slate-400">
                   Price
                   <input
@@ -105,27 +78,28 @@ export function QuoteCart({
                   />
                 </label>
 
-                <label className="flex items-center gap-1.5 text-xs text-slate-400">
-                  Discount %
-                  <input
-                    type="number"
-                    value={item.discountPct}
-                    onChange={(e) =>
-                      onUpdate(item.lineId, {
-                        discountPct: Math.min(
-                          100,
-                          Math.max(0, Number(e.target.value) || 0)
-                        ),
-                      })
-                    }
-                    className="w-16 rounded-md border border-slate-300 px-2 py-1 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2050]/20"
-                  />
-                </label>
-
-                <span className="ml-auto text-sm font-bold text-slate-900">
-                  {formatCurrency(line?.total ?? 0)}
+                <span className="ml-auto text-right">
+                  <span className="block text-sm font-bold text-slate-900">
+                    {formatCurrency(line?.total ?? 0)}
+                  </span>
+                  <span className="block text-[11px] leading-tight text-slate-400">
+                    incl. {item.taxPct}% GST
+                  </span>
                 </span>
               </div>
+
+              <label className="flex items-center gap-1.5 text-xs text-slate-400">
+                Remarks
+                <input
+                  type="text"
+                  value={item.remarks ?? ""}
+                  onChange={(e) =>
+                    onUpdate(item.lineId, { remarks: e.target.value })
+                  }
+                  placeholder="Shown next to this service on the quotation"
+                  className="w-full rounded-md border border-slate-300 px-2 py-1 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2050]/20"
+                />
+              </label>
 
               {item.unitPrice === 0 && (
                 <p className="text-xs font-medium text-amber-600">

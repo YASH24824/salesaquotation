@@ -1,6 +1,26 @@
 {
   "company": {
     "name": "NextGen Business Consultancy",
+    "legalName": "NextGen Business Consultancy Pvt Ltd",
+    "stats": {
+      "employees": {
+        "value": "300+",
+        "label": "Employees",
+        "caption": "Dedicated professionals on our team"
+      },
+      "googleReviews": {
+        "value": "4.9",
+        "label": "Google Reviews",
+        "caption": "Average rating from our clients",
+        "href": "https://tinyurl.com/358y7a92"
+      },
+      "award": {
+        "value": "2026",
+        "label": "Awarded by Outlook",
+        "caption": "Most Trusted Business Advisory of the Year",
+        "href": "https://tinyurl.com/yy4jcdf2"
+      }
+    },
     "tagline": "Digital Marketing & Business Growth Solutions",
     "logo": "/logo.png",
     "address": "2ND FLOOR, PRESIDENT PLAZA, SG HIGHWAY, THALTEJ, AHMEDABAD - 380054",

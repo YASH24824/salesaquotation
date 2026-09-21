@@ -9,7 +9,7 @@ export type NewServiceInput = {
   unit: string;
   unitPrice: number;
   taxPct: number;
-  quantity: number;
+  remarks: string;
 };
 
 export function AddServiceForm({
@@ -24,7 +24,7 @@ export function AddServiceForm({
   const [unit, setUnit] = useState("");
   const [price, setPrice] = useState("");
   const [taxPct, setTaxPct] = useState(String(defaultTaxPct));
-  const [quantity, setQuantity] = useState("1");
+  const [remarks, setRemarks] = useState("");
 
   const canAdd = name.trim().length > 0;
 
@@ -37,14 +37,14 @@ export function AddServiceForm({
       unit: unit.trim(),
       unitPrice: Number(price) || 0,
       taxPct: Number(taxPct) || 0,
-      quantity: Math.max(1, Number(quantity) || 1),
+      remarks: remarks.trim(),
     });
     setName("");
     setDescription("");
     setUnit("");
     setPrice("");
     setTaxPct(String(defaultTaxPct));
-    setQuantity("1");
+    setRemarks("");
   }
 
   return (
@@ -102,22 +102,22 @@ export function AddServiceForm({
         </label>
 
         <label className="flex flex-col gap-1 text-xs text-slate-500">
-          Quantity
-          <input
-            type="number"
-            min={1}
-            value={quantity}
-            onChange={(e) => setQuantity(e.target.value)}
-            className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 focus:border-[#0B2050] focus:outline-none focus:ring-2 focus:ring-[#0B2050]/20"
-          />
-        </label>
-
-        <label className="flex flex-col gap-1 text-xs text-slate-500">
           Tax %
           <input
             type="number"
             value={taxPct}
             onChange={(e) => setTaxPct(e.target.value)}
+            className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 focus:border-[#0B2050] focus:outline-none focus:ring-2 focus:ring-[#0B2050]/20"
+          />
+        </label>
+
+        <label className="sm:col-span-2 flex flex-col gap-1 text-xs text-slate-500">
+          Remarks (optional)
+          <input
+            type="text"
+            value={remarks}
+            onChange={(e) => setRemarks(e.target.value)}
+            placeholder="Shown next to this service on the quotation"
             className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 focus:border-[#0B2050] focus:outline-none focus:ring-2 focus:ring-[#0B2050]/20"
           />
         </label>

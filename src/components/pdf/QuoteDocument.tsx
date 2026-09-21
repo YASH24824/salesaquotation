@@ -15,8 +15,9 @@ import {
   Rect,
   Circle,
   Line,
+  Link,
 } from "@react-pdf/renderer";
-import { FullQuote } from "@/lib/types";
+import { FullQuote, Stat } from "@/lib/types";
 import { computeTotals, formatCurrency } from "@/lib/calc";
 
 /* ================================================================== */
@@ -177,20 +178,25 @@ type IconName =
   | "file"
   | "cart"
   | "share"
-  | "package";
+  | "package"
+  | "users"
+  | "star"
+  | "award";
 
 function Icon({
   name,
   size = 14,
   color = "#ffffff",
   weight = 1.7,
+  fill = "none",
 }: {
   name: IconName;
   size?: number;
   color?: string;
   weight?: number;
+  fill?: string;
 }) {
-  const p = { stroke: color, strokeWidth: weight, fill: "none", strokeLinecap: "round" as const };
+  const p = { stroke: color, strokeWidth: weight, fill, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24">
       {name === "user" && (
@@ -299,6 +305,24 @@ function Icon({
           <Line x1="8.3" y1="13.2" x2="15.7" y2="17.4" {...p} />
         </>
       )}
+      {name === "users" && (
+        <>
+          <Circle cx="9" cy="8" r="3.3" {...p} />
+          <Path d="M2.6 20 C2.6 16.2 5.4 14.2 9 14.2 C12.6 14.2 15.4 16.2 15.4 20" {...p} />
+          <Circle cx="17.2" cy="9" r="2.6" {...p} />
+          <Path d="M16.8 14.4 C19.6 14.6 21.6 16.4 21.6 19.6" {...p} />
+        </>
+      )}
+      {name === "star" && (
+        <Path d="M12 2.8 L14.9 8.9 L21.4 9.7 L16.6 14.2 L17.9 20.8 L12 17.5 L6.1 20.8 L7.4 14.2 L2.6 9.7 L9.1 8.9 Z" {...p} />
+      )}
+      {name === "award" && (
+        <>
+          <Circle cx="12" cy="9" r="5.8" {...p} />
+          <Path d="M8.7 13.6 L7.2 21.4 L12 18.9 L16.8 21.4 L15.3 13.6" {...p} />
+          <Path d="M12 6.4 L12.9 8.2 L14.9 8.5 L13.4 9.9 L13.8 11.9 L12 10.9 L10.2 11.9 L10.6 9.9 L9.1 8.5 L11.1 8.2 Z" {...p} />
+        </>
+      )}
       {name === "package" && (
         <>
           <Path d="M12 2.6 L20.6 7.2 V16.8 L12 21.4 L3.4 16.8 V7.2 Z" {...p} />
@@ -380,7 +404,7 @@ function makeStyles(navy: string, accent: string) {
     metaVal: { flex: 1, fontSize: 8.5, color: "#475569", marginTop: 2 },
 
     /* table */
-    tHead: { flexDirection: "row", backgroundColor: navy, paddingVertical: 7 },
+    tHead: { flexDirection: "row", alignItems: "center", backgroundColor: navy, paddingVertical: 7 },
     tHeadCell: { fontSize: 7.5, fontFamily: SANS, fontWeight: "bold", color: "#ffffff", letterSpacing: 1 },
     tRow: { flexDirection: "row", borderBottomWidth: 0.75, borderBottomColor: "#e2e8f0", minHeight: 44 },
     svcCell: { flexDirection: "row", paddingVertical: 9, paddingHorizontal: 10 },
@@ -389,14 +413,15 @@ function makeStyles(navy: string, accent: string) {
     svcDesc: { fontSize: 7.5, color: "#64748b", lineHeight: 1.5, marginTop: 2.5 },
     numCell: { justifyContent: "center", alignItems: "center", paddingHorizontal: 4, borderLeftWidth: 0.75, borderLeftColor: "#e2e8f0" },
     numText: { fontSize: 9, fontFamily: SANS, fontWeight: "bold", color: "#1e293b", textAlign: "center" },
-    discText: { fontSize: 9, color: "#64748b", textAlign: "center" },
     lineTotal: { fontFamily: SANS, fontWeight: "bold", color: accent, textAlign: "center" },
 
-    colSvc: { width: "45%" },
-    colQty: { width: "11%" },
+    remarksCell: { justifyContent: "center", paddingVertical: 8, paddingHorizontal: 8, borderLeftWidth: 0.75, borderLeftColor: "#e2e8f0" },
+    remarksText: { fontSize: 8, color: "#475569", lineHeight: 1.45 },
+
+    colSvc: { width: "40%" },
     colPrice: { width: "15%" },
-    colDisc: { width: "12%" },
-    colTotal: { width: "17%" },
+    colTotal: { width: "20%" },
+    colRemarks: { width: "25%" },
 
     /* totals */
     totalsWrap: { flexDirection: "row" },
@@ -413,20 +438,41 @@ function makeStyles(navy: string, accent: string) {
     grandLabel: { fontSize: 11.5, fontFamily: SANS, fontWeight: "bold", color: "#ffffff", letterSpacing: 0.5 },
     grandVal: { fontFamily: SANS, fontWeight: "bold", color: "#ffffff" },
 
-    /* why choose us + bank details */
-    lower: { flexDirection: "row", marginTop: 16, paddingHorizontal: 10 },
-    termsCol: { width: "58%", paddingRight: 18 },
-    termsCap: { fontSize: 8, fontFamily: SANS, fontWeight: "bold", color: accent, letterSpacing: 0.6 },
-    termsRule: { width: 18, height: 1.6, backgroundColor: accent, marginTop: 4, marginBottom: 8 },
-    whyTrusted: { fontSize: 9.5, fontFamily: SANS, fontWeight: "bold", color: "#1e293b", lineHeight: 1.3 },
-    whyGrow: { fontSize: 9, fontFamily: SANS, fontWeight: "bold", color: navy, lineHeight: 1.35, marginTop: 5 },
-    whyExpertise: { fontSize: 8, color: "#64748b", lineHeight: 1.4, marginTop: 5 },
-    signCol: { width: "42%", paddingLeft: 18, borderLeftWidth: 0.75, borderLeftColor: "#e2e8f0" },
-    bankBox: { marginTop: 8, borderWidth: 0.75, borderColor: "#e2e8f0", borderRadius: 4, paddingHorizontal: 10, paddingVertical: 8 },
-    bankRow: { flexDirection: "row", paddingVertical: 4, borderBottomWidth: 0.75, borderBottomColor: "#e2e8f0", borderStyle: "dashed" },
-    bankRowLast: { borderBottomWidth: 0 },
-    bankLabel: { width: 76, fontSize: 7.5, color: "#64748b" },
-    bankValue: { flex: 1, fontSize: 7.5, fontFamily: SANS, fontWeight: "bold", color: "#1e293b", textAlign: "right" },
+    /* why choose us — full-width, large */
+    why: { marginTop: 14, marginHorizontal: 10, backgroundColor: tint(accent, 0.08), borderLeftWidth: 4, borderLeftColor: accent, paddingVertical: 12, paddingHorizontal: 16 },
+    whyCap: { fontSize: 11.5, fontFamily: SANS, fontWeight: "bold", color: accent, letterSpacing: 1.2 },
+    whyRule: { width: 30, height: 2, backgroundColor: accent, marginTop: 4, marginBottom: 8 },
+    whyTrusted: { fontSize: 15.5, fontFamily: SANS, fontWeight: "bold", color: "#0f172a", lineHeight: 1.25 },
+    whyGrow: { fontSize: 12, fontFamily: SANS, fontWeight: "bold", color: navy, lineHeight: 1.3, marginTop: 5 },
+    whyExpertise: { fontSize: 10.5, color: "#475569", lineHeight: 1.4, marginTop: 5 },
+
+    /* page 2 — information | credentials table */
+    detailsTitleRow: { flexDirection: "row", alignItems: "center", marginTop: 10, marginBottom: 12, paddingHorizontal: 10 },
+    detailsTitle: { fontSize: 17, fontFamily: SANS, fontWeight: "bold", color: navy, letterSpacing: 1.4 },
+    detailsRule: { flex: 1, height: 1.5, backgroundColor: accent, marginLeft: 12 },
+    detailsTable: { marginHorizontal: 10, borderWidth: 0.75, borderColor: "#cbd5e1", flexDirection: "row" },
+    detailsCol: { width: "50%" },
+    detailsColDivider: { borderLeftWidth: 0.75, borderLeftColor: "#cbd5e1" },
+    detailsHead: { backgroundColor: navy, paddingVertical: 9, paddingHorizontal: 14 },
+    detailsHeadText: { fontSize: 12.5, fontFamily: SANS, fontWeight: "bold", color: "#ffffff", letterSpacing: 1.6 },
+    detailsCell: { paddingVertical: 11, paddingHorizontal: 14, borderBottomWidth: 0.75, borderBottomColor: "#e2e8f0" },
+    detailsCellLast: { borderBottomWidth: 0 },
+    detailsLabel: { fontSize: 9, fontFamily: SANS, fontWeight: "bold", color: accent, letterSpacing: 0.9 },
+    /* page 2 - statistics */
+    statsWrap: { marginTop: 20 },
+    statsTitleRow: { flexDirection: "row", alignItems: "center", marginBottom: 8, paddingHorizontal: 10 },
+    statsTitle: { fontSize: 9, fontFamily: SANS, fontWeight: "bold", color: "#64748b", letterSpacing: 1.6 },
+    statsTitleRule: { flex: 1, height: 0.75, backgroundColor: "#cbd5e1", marginLeft: 10 },
+    statsRow: { flexDirection: "row", marginHorizontal: 5 },
+    statCard: { flex: 1, marginHorizontal: 5, borderWidth: 0.75, borderColor: "#e2e8f0", borderTopWidth: 2, borderTopColor: accent, backgroundColor: tint(accent, 0.04), alignItems: "center", paddingVertical: 10, paddingHorizontal: 8 },
+    statIcon: { width: 26, height: 26, borderRadius: 13, backgroundColor: navy, alignItems: "center", justifyContent: "center" },
+    statValue: { fontSize: 22, fontFamily: SANS, fontWeight: "bold", color: navy, marginTop: 5 },
+    statSlot: { height: 9, marginTop: 3, flexDirection: "row", alignItems: "center", justifyContent: "center" },
+    statRule: { width: 18, height: 1.5, backgroundColor: accent },
+    statLabel: { fontSize: 7.5, fontFamily: SANS, fontWeight: "bold", color: accent, letterSpacing: 0.9, marginTop: 4, textAlign: "center" },
+    statCaption: { fontSize: 7.5, color: "#64748b", lineHeight: 1.35, marginTop: 2, textAlign: "center" },
+
+    detailsValue: { fontSize: 11.5, fontFamily: SANS, fontWeight: "bold", color: "#0f172a", lineHeight: 1.35, marginTop: 4 },
 
     /* footer — three equal columns (address / email / website) for an even start-medium-end spread */
     footer: { position: "absolute", left: PAGE_PAD_X, right: PAGE_PAD_X, bottom: 19 },
@@ -438,6 +484,93 @@ function makeStyles(navy: string, accent: string) {
     footerTextWrap: { flex: 1 },
     footerText: { fontSize: 8.5, color: "#ffffff", lineHeight: 1.35 },
   });
+}
+
+/* ================================================================== */
+/* information | credentials table                                    */
+/* ================================================================== */
+
+type DetailRow = { label: string; value?: string };
+
+/** One half of the page-2 table: a navy header cell, then label-over-value
+ *  cells. Label-over-value (instead of label | value on one line) keeps long
+ *  values like the account name and address readable at a large size. */
+function DetailsColumn({
+  title,
+  rows,
+  divider,
+  styles: s,
+}: {
+  title: string;
+  rows: DetailRow[];
+  divider?: boolean;
+  styles: ReturnType<typeof makeStyles>;
+}) {
+  const visible = rows.filter((r) => r.value && r.value.trim());
+  return (
+    <View style={divider ? [s.detailsCol, s.detailsColDivider] : s.detailsCol}>
+      <View style={s.detailsHead}>
+        <Text style={s.detailsHeadText}>{title}</Text>
+      </View>
+      {visible.map((r, i) => (
+        <View
+          key={r.label}
+          style={i === visible.length - 1 ? [s.detailsCell, s.detailsCellLast] : s.detailsCell}
+        >
+          <Text style={s.detailsLabel}>{r.label}</Text>
+          <SplitText style={s.detailsValue}>{r.value}</SplitText>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+/** One statistic card: icon, big figure, a divider (five stars for the review
+ *  card), then label and caption. All cards share this shape so they line up. */
+function StatCard({
+  stat,
+  icon,
+  stars,
+  accent,
+  styles: s,
+}: {
+  stat: Stat;
+  icon: IconName;
+  stars?: boolean;
+  accent: string;
+  styles: ReturnType<typeof makeStyles>;
+}) {
+  const body = (
+    <>
+      <View style={s.statIcon}>
+        <Icon name={icon} size={14} />
+      </View>
+      <Text style={s.statValue}>{stat.value}</Text>
+      <View style={s.statSlot}>
+        {stars ? (
+          [0, 1, 2, 3, 4].map((i) => (
+            <View key={i} style={{ marginHorizontal: 1 }}>
+              <Icon name="star" size={8} color={accent} fill={accent} weight={0.5} />
+            </View>
+          ))
+        ) : (
+          <View style={s.statRule} />
+        )}
+      </View>
+      <Text style={s.statLabel}>{stat.label.toUpperCase()}</Text>
+      <Text style={s.statCaption}>{stat.caption}</Text>
+    </>
+  );
+
+  // The card's own style goes on the wrapper so the flex layout is identical
+  // whether or not it is a link.
+  return stat.href ? (
+    <Link src={stat.href} style={[s.statCard, { textDecoration: "none" }]}>
+      {body}
+    </Link>
+  ) : (
+    <View style={s.statCard}>{body}</View>
+  );
 }
 
 /* ================================================================== */
@@ -471,6 +604,22 @@ export function QuoteDocument({
 
   const hasGstin = Boolean(company.gstin);
   const grandText = formatCurrency(totals.grandTotal);
+
+  const informationRows: DetailRow[] = [
+    { label: "COMPANY NAME", value: company.legalName || company.name },
+    { label: "ADDRESS", value: company.address },
+    { label: "EMAIL", value: company.email },
+    { label: "WEBSITE", value: company.website },
+  ];
+  const credentialRows: DetailRow[] = [
+    { label: "GSTIN", value: company.gstin },
+    { label: "BANK NAME", value: company.bankName },
+    { label: "ACCOUNT NAME", value: company.accountName },
+    { label: "ACCOUNT NO.", value: company.accountNo },
+    { label: "IFSC CODE", value: company.ifsc },
+    { label: "SWIFT CODE", value: company.swift },
+    { label: "BRANCH", value: company.branch },
+  ];
 
   return (
     <Document>
@@ -648,10 +797,9 @@ export function QuoteDocument({
         <View style={{ marginTop: 12 }}>
           <View style={s.tHead} fixed>
             <Text style={[s.tHeadCell, s.colSvc, { paddingLeft: 10 }]}>SERVICE</Text>
-            <Text style={[s.tHeadCell, s.colQty, { textAlign: "center" }]}>QTY</Text>
             <Text style={[s.tHeadCell, s.colPrice, { textAlign: "center" }]}>PRICE</Text>
-            <Text style={[s.tHeadCell, s.colDisc, { textAlign: "center" }]}>DISC.</Text>
             <Text style={[s.tHeadCell, s.colTotal, { textAlign: "center" }]}>TOTAL</Text>
+            <Text style={[s.tHeadCell, s.colRemarks, { paddingLeft: 8 }]}>REMARKS</Text>
           </View>
 
           {items.map((item) => {
@@ -672,23 +820,18 @@ export function QuoteDocument({
                     ) : null}
                   </View>
                 </View>
-                <View style={[s.colQty, s.numCell]}>
-                  <Text style={s.numText}>{item.quantity}</Text>
-                </View>
                 <View style={[s.colPrice, s.numCell]}>
                   <Text style={[s.numText, { fontSize: fitSize(formatCurrency(item.unitPrice), 9, 10, 6.5) }]}>
                     {formatCurrency(item.unitPrice)}
-                  </Text>
-                </View>
-                <View style={[s.colDisc, s.numCell]}>
-                  <Text style={s.discText}>
-                    {item.discountPct > 0 ? `${item.discountPct}%` : "-"}
                   </Text>
                 </View>
                 <View style={[s.colTotal, s.numCell]}>
                   <Text style={[s.lineTotal, { fontSize: fitSize(totalText, 10, 11, 7) }]}>
                     {totalText}
                   </Text>
+                </View>
+                <View style={[s.colRemarks, s.remarksCell]}>
+                  <SplitText style={s.remarksText}>{item.remarks}</SplitText>
                 </View>
               </View>
             );
@@ -711,21 +854,13 @@ export function QuoteDocument({
               <Text style={s.totalsLabel}>Subtotal</Text>
               <Text style={s.totalsVal}>{formatCurrency(totals.subtotal)}</Text>
             </View>
-            {totals.lineDiscountTotal > 0 ? (
-              <View style={s.totalsRow}>
-                <Text style={s.totalsLabel}>Line Discounts</Text>
-                <Text style={s.totalsNeg}>- {formatCurrency(totals.lineDiscountTotal)}</Text>
-              </View>
-            ) : null}
-            {totals.quoteDiscountAmt > 0 ? (
-              <View style={s.totalsRow}>
-                <Text style={s.totalsLabel}>Quote Discount</Text>
-                <Text style={s.totalsNeg}>- {formatCurrency(totals.quoteDiscountAmt)}</Text>
-              </View>
-            ) : null}
             <View style={s.totalsRow}>
-              <Text style={s.totalsLabel}>Tax (GST)</Text>
-              <Text style={s.totalsVal}>{formatCurrency(totals.taxTotal)}</Text>
+              <Text style={s.totalsLabel}>Total Discount</Text>
+              {totals.totalDiscount > 0 ? (
+                <Text style={s.totalsNeg}>- {formatCurrency(totals.totalDiscount)}</Text>
+              ) : (
+                <Text style={s.totalsVal}>{formatCurrency(0)}</Text>
+              )}
             </View>
 
             <View style={s.grandWrap}>
@@ -752,45 +887,40 @@ export function QuoteDocument({
           </View>
         </View>
 
-        {/* ---------- why choose us + bank details ---------- */}
-        <View style={s.lower} wrap={false}>
-          <View style={s.termsCol}>
-            <Text style={s.termsCap}>{whyChooseUsHeading}</Text>
-            <View style={s.termsRule} />
-            <Text style={s.whyTrusted}>{trustedPartnerLine}</Text>
-            <Text style={s.whyGrow}>{growLine}</Text>
-            <Text style={s.whyExpertise}>{expertiseLine}</Text>
+        {/* ---------- why choose us ---------- */}
+        <View style={s.why} wrap={false}>
+          <Text style={s.whyCap}>{whyChooseUsHeading}</Text>
+          <View style={s.whyRule} />
+          <Text style={s.whyTrusted}>{trustedPartnerLine}</Text>
+          <Text style={s.whyGrow}>{growLine}</Text>
+          <Text style={s.whyExpertise}>{expertiseLine}</Text>
+        </View>
+
+        {/* ---------- page 2: information | credentials ---------- */}
+        <View break>
+          <View style={s.detailsTitleRow}>
+            <Text style={s.detailsTitle}>COMPANY DETAILS</Text>
+            <View style={s.detailsRule} />
           </View>
 
-          <View style={s.signCol}>
-            <Text style={s.termsCap}>BANK DETAILS</Text>
-            <View style={s.bankBox}>
-              <View style={s.bankRow}>
-                <Text style={s.bankLabel}>Bank Name</Text>
-                <Text style={s.bankValue}>{company.bankName}</Text>
+          <View style={s.detailsTable} wrap={false}>
+            <DetailsColumn title="INFORMATION" rows={informationRows} styles={s} />
+            <DetailsColumn title="CREDENTIALS" rows={credentialRows} styles={s} divider />
+          </View>
+
+          {company.stats ? (
+            <View style={s.statsWrap} wrap={false}>
+              <View style={s.statsTitleRow}>
+                <Text style={s.statsTitle}>OUR TRACK RECORD</Text>
+                <View style={s.statsTitleRule} />
               </View>
-              <View style={s.bankRow}>
-                <Text style={s.bankLabel}>Account Name</Text>
-                <Text style={s.bankValue}>{company.accountName}</Text>
-              </View>
-              <View style={s.bankRow}>
-                <Text style={s.bankLabel}>Account No.</Text>
-                <Text style={s.bankValue}>{company.accountNo}</Text>
-              </View>
-              <View style={s.bankRow}>
-                <Text style={s.bankLabel}>IFSC</Text>
-                <Text style={s.bankValue}>{company.ifsc}</Text>
-              </View>
-              <View style={s.bankRow}>
-                <Text style={s.bankLabel}>SWIFT Code</Text>
-                <Text style={s.bankValue}>{company.swift}</Text>
-              </View>
-              <View style={[s.bankRow, s.bankRowLast]}>
-                <Text style={s.bankLabel}>Branch</Text>
-                <Text style={s.bankValue}>{company.branch}</Text>
+              <View style={s.statsRow}>
+                <StatCard stat={company.stats.employees} icon="users" accent={accent} styles={s} />
+                <StatCard stat={company.stats.googleReviews} icon="star" stars accent={accent} styles={s} />
+                <StatCard stat={company.stats.award} icon="award" accent={accent} styles={s} />
               </View>
             </View>
-          </View>
+          ) : null}
         </View>
 
         {/* ---------- footer (pinned, repeats on every page) ---------- */}

@@ -63,9 +63,8 @@ export default function Home() {
       description: input.description,
       unit: input.unit,
       unitPrice: input.unitPrice,
-      quantity: input.quantity,
-      discountPct: 0,
       taxPct: input.taxPct,
+      remarks: input.remarks,
     };
     setItems((prev) => [...prev, newItem]);
   }
