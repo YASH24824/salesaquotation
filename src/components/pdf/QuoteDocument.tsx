@@ -798,7 +798,7 @@ export function QuoteDocument({
           <View style={s.tHead} fixed>
             <Text style={[s.tHeadCell, s.colSvc, { paddingLeft: 10 }]}>SERVICE</Text>
             <Text style={[s.tHeadCell, s.colPrice, { textAlign: "center" }]}>PRICE</Text>
-            <Text style={[s.tHeadCell, s.colTotal, { textAlign: "center" }]}>TOTAL</Text>
+            <Text style={[s.tHeadCell, s.colTotal, { textAlign: "center" }]}>{"TOTAL\n(INCL. 18% GST)"}</Text>
             <Text style={[s.tHeadCell, s.colRemarks, { paddingLeft: 8 }]}>REMARKS</Text>
           </View>
 

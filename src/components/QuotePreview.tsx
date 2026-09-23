@@ -293,6 +293,8 @@ export function QuotePreview({
               </th>
               <th className="px-3 py-3 text-center text-[11px] font-semibold uppercase tracking-[0.13em] text-white">
                 Total
+                <br />
+                (Incl. 18% GST)
               </th>
               <th className="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.13em] text-white">
                 Remarks
