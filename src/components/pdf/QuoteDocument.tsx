@@ -32,6 +32,23 @@ Font.register({
   ],
 });
 
+// Noto Sans has no Indic glyphs, so Gujarati / Hindi text would render as
+// garbage. These are used per character as fallbacks (see SANS below).
+Font.register({
+  family: "Noto Sans Gujarati",
+  fonts: [
+    { src: "/fonts/NotoSansGujarati-Regular.ttf", fontWeight: "normal" },
+    { src: "/fonts/NotoSansGujarati-Bold.ttf", fontWeight: "bold" },
+  ],
+});
+Font.register({
+  family: "Noto Sans Devanagari",
+  fonts: [
+    { src: "/fonts/NotoSansDevanagari-Regular.ttf", fontWeight: "normal" },
+    { src: "/fonts/NotoSansDevanagari-Bold.ttf", fontWeight: "bold" },
+  ],
+});
+
 // Optional: drop a serif next to your sans for the "QUOTATION" plate and the
 // footer sign-off, then set DISPLAY_FAMILY to "Noto Serif".
 // Font.register({
@@ -41,7 +58,33 @@ Font.register({
 //     { src: "/fonts/NotoSerif-Bold.ttf", fontWeight: "bold" },
 //   ],
 // });
-const SANS = "Noto Sans";
+/** fontkit (react-pdf's shaper) crashes with "Cannot read properties of null
+ *  (reading 'xCoordinate')" on mark anchors a font leaves NULL — Noto Sans
+ *  Gujarati does this for e.g. અ + ં ("અંદાજ"). HarfBuzz treats a NULL anchor
+ *  as "don't attach"; this wraps fontkit's shared GPOS processor to do the
+ *  same. Must be awaited before pdf(...) renders. */
+let indicShapingPatched = false;
+export async function prepareQuoteFonts() {
+  if (indicShapingPatched) return;
+  await Font.load({ fontFamily: "Noto Sans Gujarati" });
+  type Gpos = { applyAnchor: (markRecord: { markAnchor?: unknown }, baseAnchor: unknown, baseIndex: number) => void };
+  const data = Font.getFont({ fontFamily: "Noto Sans Gujarati" })?.data as
+    | { _layoutEngine?: { engine?: { GPOSProcessor?: Gpos } } }
+    | null;
+  const gpos = data?._layoutEngine?.engine?.GPOSProcessor;
+  if (gpos) {
+    const proto = Object.getPrototypeOf(gpos) as Gpos;
+    const original = proto.applyAnchor;
+    proto.applyAnchor = function (markRecord, baseAnchor, baseIndex) {
+      if (!baseAnchor || !markRecord?.markAnchor) return;
+      return original.call(this, markRecord, baseAnchor, baseIndex);
+    };
+  }
+  indicShapingPatched = true;
+}
+
+// Fallback chain: react-pdf picks, per character, the first font that has it.
+const SANS = ["Noto Sans", "Noto Sans Gujarati", "Noto Sans Devanagari"];
 const DISPLAY_FAMILY = SANS; // -> "Noto Serif" once registered above
 
 // Never auto-hyphenate. Long strings are broken deliberately by <SplitText/>
@@ -94,6 +137,44 @@ function fitSize(text: string | undefined, base: number, comfortableChars: numbe
   if (len <= comfortableChars) return base;
   return Math.max(min, Math.round(base * (comfortableChars / len) * 10) / 10);
 }
+
+/** react-pdf drops tab characters, so text pasted from a table (e.g.
+ *  "Advance<TAB>₹1,50,000") would run together. */
+function tabsToSpaces(text: string | undefined) {
+  return (text ?? "").replace(/\t/g, "    ");
+}
+
+/* ================================================================== */
+/* pagination helpers                                                 */
+/* ================================================================== */
+
+/** Blocks estimated taller than this are allowed to split across pages.
+ *  Anything with wrap={false} that is taller than the free space on a page
+ *  overflows under the footer and gets clipped, so only short blocks may be
+ *  kept whole. */
+const KEEP_TOGETHER_MAX = 220;
+
+/** Deliberately pessimistic height estimate (pt) for a block of wrapped
+ *  text — overestimating only means a block may split, never that it clips. */
+function estimateTextHeight(
+  text: string | undefined,
+  widthPt: number,
+  fontSize: number,
+  lineHeight: number
+) {
+  const value = (text ?? "").trim();
+  if (!value) return 0;
+  const charsPerLine = Math.max(1, Math.floor(widthPt / (fontSize * 0.56)));
+  const lines = value
+    .split("\n")
+    .reduce((n, para) => n + Math.max(1, Math.ceil(para.length / charsPerLine)), 0);
+  return lines * fontSize * lineHeight;
+}
+
+// column widths in pt, minus padding (and the icon for the service column)
+const SVC_TEXT_W = CONTENT_W * 0.4 - 20 - 35;
+const REMARKS_TEXT_W = CONTENT_W * 0.25 - 16;
+const NOTES_TEXT_W = CONTENT_W * 0.45 - 20;
 
 /* ================================================================== */
 /* long-text handling                                                 */
@@ -361,7 +442,9 @@ function makeStyles(navy: string, accent: string) {
       fontSize: 9,
       fontFamily: SANS,
       color: "#1e293b",
-      paddingTop: 15,
+      // 28pt keeps continuation pages clear of the frame; the header pulls
+      // itself back up (marginTop -13) so page 1 is unchanged.
+      paddingTop: 28,
       paddingHorizontal: PAGE_PAD_X,
       paddingBottom: FOOTER_H + 30,
     },
@@ -372,7 +455,7 @@ function makeStyles(navy: string, accent: string) {
     corner: { position: "absolute", width: 26, height: 26, borderColor: navy },
 
     /* header */
-    header: { height: 118, position: "relative" },
+    header: { height: 118, marginTop: -13, position: "relative" },
     headerRow: { position: "absolute", top: 0, left: 0, right: 0, height: 118, flexDirection: "row" },
     brandBox: { width: "43%", paddingLeft: 12, paddingTop: 26, justifyContent: "flex-start" },
     logo: { height: 68, width: 180, objectFit: "contain", objectPositionX: 0 },
@@ -412,6 +495,8 @@ function makeStyles(navy: string, accent: string) {
     svcName: { fontSize: 10, fontFamily: SANS, fontWeight: "bold", color: navy, lineHeight: 1.25 },
     svcDesc: { fontSize: 7.5, color: "#64748b", lineHeight: 1.5, marginTop: 2.5 },
     numCell: { justifyContent: "center", alignItems: "center", paddingHorizontal: 4, borderLeftWidth: 0.75, borderLeftColor: "#e2e8f0" },
+    /* a row that splits across pages keeps its figures at the top, next to the service name */
+    cellTop: { justifyContent: "flex-start", paddingTop: 12 },
     numText: { fontSize: 9, fontFamily: SANS, fontWeight: "bold", color: "#1e293b", textAlign: "center" },
     lineTotal: { fontFamily: SANS, fontWeight: "bold", color: accent, textAlign: "center" },
 
@@ -428,6 +513,7 @@ function makeStyles(navy: string, accent: string) {
     notesBox: { width: "45%", paddingHorizontal: 10, paddingTop: 12, paddingBottom: 8 },
     notesCap: { fontSize: 7.5, fontFamily: SANS, fontWeight: "bold", color: accent, letterSpacing: 0.6, marginBottom: 4 },
     notesText: { fontSize: 8.5, color: "#475569", lineHeight: 1.5 },
+    notesFull: { paddingHorizontal: 10, paddingTop: 12 },
     totalsCol: { width: "55%", borderLeftWidth: 0.75, borderLeftColor: "#e2e8f0" },
     totalsRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 12, paddingVertical: 7, borderBottomWidth: 0.75, borderBottomColor: "#e2e8f0" },
     totalsLabel: { fontSize: 9, color: "#334155" },
@@ -594,7 +680,13 @@ export function QuoteDocument({
   growLine?: string;
   expertiseLine?: string;
 }) {
-  const { company, customer, salesperson, items, meta, notes, quoteDiscount } = quote;
+  const { company, customer, salesperson, meta, quoteDiscount } = quote;
+  const items = quote.items.map((item) => ({
+    ...item,
+    description: tabsToSpaces(item.description),
+    remarks: tabsToSpaces(item.remarks),
+  }));
+  const notes = tabsToSpaces(quote.notes);
   const totals = computeTotals(items, quoteDiscount);
   const byId = new Map(totals.items.map((b) => [b.lineId, b]));
 
@@ -604,6 +696,9 @@ export function QuoteDocument({
 
   const hasGstin = Boolean(company.gstin);
   const grandText = formatCurrency(totals.grandTotal);
+  // Notes beside the totals must fit on one page with them; longer notes move
+  // below the totals where they can flow onto the next page.
+  const notesBelow = estimateTextHeight(notes, NOTES_TEXT_W, 8.5, 1.5) > KEEP_TOGETHER_MAX - 60;
 
   const informationRows: DetailRow[] = [
     { label: "COMPANY NAME", value: company.legalName || company.name },
@@ -805,8 +900,15 @@ export function QuoteDocument({
           {items.map((item) => {
             const line = byId.get(item.lineId);
             const totalText = formatCurrency(line?.total ?? 0);
+            const rowHeight = Math.max(
+              18 + estimateTextHeight(item.name, SVC_TEXT_W, 10, 1.25) +
+                estimateTextHeight(item.description, SVC_TEXT_W, 7.5, 1.5),
+              16 + estimateTextHeight(item.remarks, REMARKS_TEXT_W, 8, 1.45)
+            );
+            // Short rows stay whole; tall ones may split so nothing is clipped.
+            const splittable = rowHeight > KEEP_TOGETHER_MAX;
             return (
-              <View key={item.lineId} style={s.tRow} wrap={false}>
+              <View key={item.lineId} style={s.tRow} wrap={splittable}>
                 <View style={[s.colSvc, s.svcCell]}>
                   <View style={s.svcIcon}>
                     <Icon name={serviceIcon(item.name)} size={14} color={navy} />
@@ -820,17 +922,17 @@ export function QuoteDocument({
                     ) : null}
                   </View>
                 </View>
-                <View style={[s.colPrice, s.numCell]}>
+                <View style={splittable ? [s.colPrice, s.numCell, s.cellTop] : [s.colPrice, s.numCell]}>
                   <Text style={[s.numText, { fontSize: fitSize(formatCurrency(item.unitPrice), 9, 10, 6.5) }]}>
                     {formatCurrency(item.unitPrice)}
                   </Text>
                 </View>
-                <View style={[s.colTotal, s.numCell]}>
+                <View style={splittable ? [s.colTotal, s.numCell, s.cellTop] : [s.colTotal, s.numCell]}>
                   <Text style={[s.lineTotal, { fontSize: fitSize(totalText, 10, 11, 7) }]}>
                     {totalText}
                   </Text>
                 </View>
-                <View style={[s.colRemarks, s.remarksCell]}>
+                <View style={splittable ? [s.colRemarks, s.remarksCell, s.cellTop] : [s.colRemarks, s.remarksCell]}>
                   <SplitText style={s.remarksText}>{item.remarks}</SplitText>
                 </View>
               </View>
@@ -841,7 +943,7 @@ export function QuoteDocument({
         {/* ---------- notes + totals ---------- */}
         <View style={s.totalsWrap} wrap={false}>
           <View style={s.notesBox}>
-            {notes ? (
+            {notes && !notesBelow ? (
               <>
                 <Text style={s.notesCap}>NOTES</Text>
                 <Text style={s.notesText}>{notes}</Text>
@@ -886,6 +988,14 @@ export function QuoteDocument({
             </View>
           </View>
         </View>
+
+        {/* long notes get their own full-width block that may split across pages */}
+        {notesBelow ? (
+          <View style={s.notesFull}>
+            <Text style={s.notesCap} minPresenceAhead={30}>NOTES</Text>
+            <Text style={s.notesText}>{notes}</Text>
+          </View>
+        ) : null}
 
         {/* ---------- why choose us ---------- */}
         <View style={s.why} wrap={false}>

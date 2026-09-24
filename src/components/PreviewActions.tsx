@@ -4,7 +4,7 @@ import { useState } from "react";
 import { pdf } from "@react-pdf/renderer";
 import { Download, Share2, Pencil, Loader2 } from "lucide-react";
 import { FullQuote } from "@/lib/types";
-import { QuoteDocument } from "@/components/pdf/QuoteDocument";
+import { QuoteDocument, prepareQuoteFonts } from "@/components/pdf/QuoteDocument";
 import { useLogoAvailable } from "@/lib/useLogoAvailable";
 
 export function PreviewActions({ quote }: { quote: FullQuote }) {
@@ -17,6 +17,7 @@ export function PreviewActions({ quote }: { quote: FullQuote }) {
     .toLowerCase();
 
   async function buildFile(): Promise<File> {
+    await prepareQuoteFonts();
     const blob = await pdf(
       <QuoteDocument quote={quote} logoOk={logoOk} />
     ).toBlob();
